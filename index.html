@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8"/>
+    <meta name="format-detection" content="telephone=no"/>
+    <meta name="viewport"
+          content="user-scalable=no, initial-scale=1, maximum-scale=1, minimum-scale=1, width=device-width, height=device-height, target-densitydpi=device-dpi"/>
+    <link rel="stylesheet" type="text/css" href="mmenu/mmenu.css"/>
+    <link rel="stylesheet" type="text/css" href="css/index.css"/>
+    <title>NTKO签章客户端</title>
+
+</head>
+<body>
+<script type="text/javascript" src="cordova.js"></script>
+<script type="text/javascript" src="js/jquery-2.0.3.min.js"></script>
+<script type="text/javascript" src="mmenu/jquery.mmenu.min.js"></script>
+<script type="text/javascript">
+    var SET_OK = "地址已设定，选择菜单以进入签章。";
+    var SET_ERROR = "等待目标地址...";
+    $(function () {
+        $('nav#menu').mmenu();
+    });
+
+    // Global InAppBrowser reference
+    var iabRef = null;
+
+    function iabLoadStart(event) {
+        //
+    }
+
+    function iabLoadStop(event) {
+        //
+    }
+
+    function iabLoadError(event) {
+        Alert(event.type + ' - ' + event.message);
+    }
+
+    function iabClose(event) {
+        iabRef.removeEventListener('loadstart', iabLoadStart);
+        iabRef.removeEventListener('loadstop', iabLoadStop);
+        iabRef.removeEventListener('loaderror', iabLoadError);
+        iabRef.removeEventListener('exit', iabClose);
+    }
+
+    function Alert(text, fn) {
+        navigator.notification.alert(text, fn || function () {
+        }, '提示', '确定');
+    }
+
+    //
+    function openPage(page) {
+        iabRef = window.open(page, '_blank', 'location=yes');
+        iabRef.addEventListener('loadstart', iabLoadStart);
+        iabRef.addEventListener('loadstop', iabLoadStop);
+        iabRef.removeEventListener('loaderror', iabLoadError);
+        iabRef.addEventListener('exit', iabClose);
+    }
+
+
+    function setSignPath() {
+        navigator.notification.prompt(
+                '请设置签章地址：',
+                function (results) {
+                    var cancel = results.buttonIndex === 2;
+                    var r = results.input1;
+                    if (!cancel) {
+                        if (valid(r)) {
+                            createPath(r);
+                            openPage(r);
+                        } else {
+                            Alert("无效的URL地址！", function () {
+                                setSignPath();
+                            });
+                        }
+                    } else {
+                        Alert("请在工作前设定好签章地址！")
+                    }
+                },
+                '设定',
+                ['确定', '退出'],
+                'http://...'
+        );
+    }
+    function reloadPage() {
+        onDeviceReady();
+    }
+    // device APIs are available
+    //
+    function onDeviceReady() {
+        var r = window.localStorage.getItem("msign.home");
+        if (valid(r)) {
+            document.getElementsByClassName("listening")[0].innerText = SET_OK;
+            openPage(r);
+        } else {
+            setSignPath();
+        }
+    }
+
+    function createPath(path) {
+        window.localStorage.setItem("msign.home", path);
+        document.getElementsByClassName("listening")[0].innerText = SET_OK;
+    }
+
+    function resetPage() {
+        window.localStorage.setItem("msign.home", "");
+        document.getElementsByClassName("listening")[0].innerText = SET_ERROR;
+    }
+
+    function fail(evt) {
+        Alert(evt.target.error.code);
+    }
+
+    function valid(r) {
+        var urlRe = /^((ftp|http|https):\/\/)?(\w+:{0,1}\w*@)?((\S+.[a-z]{2,6})|([0-9\.]+))(:[0-9]+)?(\S+)?$/;
+        return (urlRe.test(r));
+    }
+
+    // Wait for device API libraries to load
+
+    document.addEventListener("deviceready", onDeviceReady, false);
+
+</script>
+
+<div id="header">
+    <a href="#menu"></a>
+    签章客户端
+</div>
+
+<div class="app">
+    <h1>NTKO签章客户端</h1>
+
+    <div id="deviceready" class="blink">
+        <p class="event listening">等待目标地址...</p>
+    </div>
+</div>
+
+<nav id="menu">
+    <ul>
+        <li><a href="javascript:setSignPath()">设定签章地址</a></li>
+        <li><a href="javascript:reloadPage()">进入签章网页</a></li>
+        <li><a href="javascript:resetPage()">清除签章地址</a></li>
+    </ul>
+</nav>
+
+</body>
+</html>
