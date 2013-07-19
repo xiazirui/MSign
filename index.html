@@ -59,6 +59,7 @@
 
 
     function setSignPath() {
+        var r = window.localStorage.getItem("msign.home");
         navigator.notification.prompt(
                 '请设置签章地址：',
                 function (results) {
@@ -79,7 +80,7 @@
                 },
                 '设定',
                 ['确定', '退出'],
-                'http://...'
+                (typeof r !=="undefined"?r:'http://你的签证服务器地址')
         );
     }
     function reloadPage() {
